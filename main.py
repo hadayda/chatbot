@@ -7,6 +7,7 @@ from chat_bot import ChatBot
 
 @app.route('/')
 def home_page():
+    ChatBot.begin()
     return render_template('index.html')
 
 
@@ -14,9 +15,7 @@ def home_page():
 def get_chat_response():
     chatbot = ChatBot()
     message = request.args.get('message')
-    return {
-        'message': chatbot.get_response(message)
-    }
+    return chatbot.get_response(message)
 
 
 if __name__ == '__main__':

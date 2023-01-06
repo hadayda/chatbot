@@ -3,16 +3,19 @@ $(document).ready(function () {
         e.preventDefault();
         let messagesContainer = $('.messages-container');
         messagesContainer.append(
-            `<li class="text-end">${$('input[name="message"]').val()}</li>`
+            `<li class="text-end mb-3"><span class="bg-primary text-white p-4 rounded-3 d-inline-block">${$('input[name="message"]').val()}</span></li>`
         );
         let form = $(this)
         $.ajax({
             url: form.attr('action'),
             data: form.serialize(),
             success: function (response) {
-                messagesContainer.append(
-                    `<li class="text-start">${response.message}</li>`
-                );
+                response.messages.forEach(function (message) {
+                    messagesContainer.append(
+                        `<li class="text-start mb-3"><span class="bg-warning p-4 rounded-3 d-inline-block">${message}</span></li>`
+                    );
+                });
+                messagesContainer.scrollTop(messagesContainer[0].scrollHeight);
                 $('input[name="message"]').val('');
             }
         })

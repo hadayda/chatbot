@@ -9,7 +9,7 @@ import numpy as np
 import csv
 import warnings
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 training = pd.read_csv('data/Training.csv')
 testing = pd.read_csv('data/Testing.csv')
@@ -37,7 +37,7 @@ print(scores.mean())
 
 model = SVC()
 model.fit(x_train, y_train)
-print("for svm: ")
+print('for svm: ')
 print(model.score(x_test, y_test))
 
 importances = clf.feature_importances_
@@ -49,10 +49,23 @@ description_list = {}
 precautionDictionary = {}
 symptoms_dict = {}
 
-print("----------------------------------------------------------------------------------------")
+print('----------------------------------------------------------------------------------------')
 
 
 class ChatBot:
+    state = 'start'
+    symptoms_given = []
+    symptoms_given_index = 0
+    symptoms_present = []
+    _tree = None
+    num_days = 0
+    symptoms_exp = []
+    feature_name = None
+    disease_input = None
+    node = 0
+    depth = 1
+    present_disease = None
+
     def __init__(self):
         super().__init__()
         for index, symptom in enumerate(x):
@@ -60,12 +73,14 @@ class ChatBot:
         self.get_severity_dict()
         self.get_description()
         self.get_precaution_dict()
-        self.state = 'start'
 
+    @staticmethod
+    def begin():
+        ChatBot.state = 'start'
     def readn(self, nstr):
         engine = pyttsx3.init()
 
-        engine.setProperty('voice', "english+f5")
+        engine.setProperty('voice', 'english+f5')
         engine.setProperty('rate', 130)
 
         engine.say(nstr)
@@ -77,9 +92,9 @@ class ChatBot:
         for item in exp:
             sum = sum + severityDictionary[item]
         if ((sum * days) / (len(exp) + 1) > 13):
-            print("You should take the consultation from doctor. ")
+            print('You should take the consultation from doctor. ')
         else:
-            print("It might not be that bad but you should take precautions.")
+            print('It might not be that bad but you should take precautions.')
 
     def get_description(self):
         global description_list
@@ -113,11 +128,12 @@ class ChatBot:
                 precautionDictionary.update(_prec)
 
     def get_info(self, message):
-        return f'Hello {message}'
+        ChatBot.state = 'symptoms_step_1'
+        return {'messages': [f'Hello {message}', 'Enter the symptom you are experiencing']}
 
     def check_pattern(self, dis_list, inp):
         inp = inp.replace(' ', '_')
-        patt = f"{inp}"
+        patt = f'{inp}'
         regexp = re.compile(patt)
         pred_list = [item for item in dis_list if regexp.search(item)]
         if (len(pred_list) > 0):
@@ -146,132 +162,111 @@ class ChatBot:
         disease = le.inverse_transform(val[0])
         return list(map(lambda x: x.strip(), list(disease)))
 
-    def get_symptoms(self, tree, feature_names, message):
-        tree_ = tree.tree_
-        feature_name = [
-            feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!"
-            for i in tree_.feature
+    def get_symptoms_step_1(self, disease):
+        ChatBot.tree_ = clf.tree_
+        ChatBot.feature_name = [
+            cols[i] if i != _tree.TREE_UNDEFINED else 'undefined!'
+            for i in ChatBot.tree_.feature
         ]
-
-        chk_dis = ",".join(feature_names).split(",")
-        symptoms_present = []
-        conf, cnf_dis = self.check_pattern(chk_dis, message)
+        chk_dis = ','.join(cols).split(',')
+        conf, cnf_dis = self.check_pattern(chk_dis, disease)
         if conf == 1:
-            print("searches related to input: ")
+            message = ['searches related to input:']
             for num, it in enumerate(cnf_dis):
-                print(num, ")", it)
-            if num != 0:
-                print(f"Select the one you meant (0 - {num}):  ", end="")
-                conf_inp = int(input(""))
-            else:
-                conf_inp = 0
-
-            message = cnf_dis[conf_inp]
-        else:
-            print("Enter valid symptom.")
-
-    def tree_to_code(self, tree, feature_names):
-        tree_ = tree.tree_
-        feature_name = [
-            feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!"
-            for i in tree_.feature
-        ]
-
-        chk_dis = ",".join(feature_names).split(",")
-        symptoms_present = []
-
-        while True:
-
-            print("\nEnter the symptom you are experiencing  \t\t", end="->")
-            disease_input = input("")
-            conf, cnf_dis = self.check_pattern(chk_dis, disease_input)
-            if conf == 1:
-                print("searches related to input: ")
-                for num, it in enumerate(cnf_dis):
-                    print(num, ")", it)
                 if num != 0:
-                    print(f"Select the one you meant (0 - {num}):  ", end="")
-                    conf_inp = int(input(""))
-                else:
-                    conf_inp = 0
+                    return {'messages': [f'Select the one you meant (0 - {num}):']}
+                message.append(f'{num}, {it}')
+            ChatBot.disease_input = cnf_dis[0]
+            ChatBot.state = 'symptoms_step_2'
+            message.append('Okay. For how many days?:')
+            return {'messages': message}
+        else:
+            return {'messages': ['Enter valid symptom.']}
 
-                disease_input = cnf_dis[conf_inp]
-                break
+    def get_symptoms_step_2(self, days):
+        try:
+            ChatBot.num_days = int(days)
+            return self.recurse()
+        except:
+            return {'messages': ['Enter a valid number of days.']}
+
+    def recurse(self):
+        indent = '  ' * self.depth
+        if ChatBot.tree_.feature[self.node] != _tree.TREE_UNDEFINED:
+            name = ChatBot.feature_name[self.node]
+            threshold = ChatBot.tree_.threshold[self.node]
+
+            if name == ChatBot.disease_input:
+                val = 1
             else:
-                print("Enter valid symptom.")
-
-        while True:
-            try:
-                num_days = int(input("Okay. From how many days ? : "))
-                break
-            except:
-                print("Enter valid input.")
-
-        def recurse(node, depth):
-            indent = "  " * depth
-            if tree_.feature[node] != _tree.TREE_UNDEFINED:
-                name = feature_name[node]
-                threshold = tree_.threshold[node]
-
-                if name == disease_input:
-                    val = 1
-                else:
-                    val = 0
-                if val <= threshold:
-                    recurse(tree_.children_left[node], depth + 1)
-                else:
-                    symptoms_present.append(name)
-                    recurse(tree_.children_right[node], depth + 1)
+                val = 0
+            if val <= threshold:
+                ChatBot.node = ChatBot.tree_.children_left[self.node]
+                ChatBot.depth += 1
+                return self.recurse()
             else:
-                present_disease = self.print_disease(tree_.value[node])
-                red_cols = reduced_data.columns
-                symptoms_given = red_cols[reduced_data.loc[present_disease].values[0].nonzero()]
-                print("Are you experiencing any ")
-                symptoms_exp = []
-                for syms in list(symptoms_given):
-                    inp = ""
-                    print(syms, "? : ", end='')
-                    while True:
-                        inp = input("")
-                        if (inp == "yes" or inp == "no"):
-                            break
-                        else:
-                            print("provide proper answers i.e. (yes/no) : ", end="")
-                    if (inp == "yes"):
-                        symptoms_exp.append(syms)
+                ChatBot.symptoms_present.append(name)
+                return self.recurse()
+        else:
+            ChatBot.state = 'symptoms_step_3'
+            return self.get_symptoms_step_3()
 
-                second_prediction = self.sec_predict(symptoms_exp)
-                # print(second_prediction)
-                self.calc_condition(symptoms_exp, num_days)
-                if (present_disease[0] == second_prediction[0]):
-                    print("You may have ", present_disease[0])
-                    print(description_list[present_disease[0]])
+    def get_symptoms_step_3(self, message=''):
+        ChatBot.present_disease = self.print_disease(ChatBot.tree_.value[ChatBot.node])
+        red_cols = reduced_data.columns
+        ChatBot.symptoms_given = red_cols[reduced_data.loc[ChatBot.present_disease].values[0].nonzero()]
+        if ChatBot.symptoms_given_index == 0:
+            ChatBot.symptoms_given_index += 1
+            return {
+                'messages': [
+                    'Are you experiencing any of the following symptoms?',
+                    ChatBot.symptoms_given[ChatBot.symptoms_given_index]
+                ]
+            }
+        elif ChatBot.symptoms_given_index == len(ChatBot.symptoms_given) - 1:
+            ChatBot.state = 'symptoms_step_4'
+            return self.get_symptoms_step_4()
+        else:
+            return self.get_next_symptom(message)
 
-                    # readn(f"You may have {present_disease[0]}")
-                    # readn(f"{description_list[present_disease[0]]}")
+    def get_next_symptom(self, response):
+        response = response.lower()
+        if response != 'yes' and response != 'no':
+            return {'response': 'Provide proper answers i.e. (yes/no)'}
+        if response == 'yes':
+            ChatBot.symptoms_exp.append(ChatBot.symptoms_given[ChatBot.symptoms_given_index])
+        ChatBot.symptoms_given_index += 1
+        return {'messages': [ChatBot.symptoms_given[ChatBot.symptoms_given_index]]}
 
-                else:
-                    print("You may have ", present_disease[0], "or ", second_prediction[0])
-                    print(description_list[present_disease[0]])
-                    print(description_list[second_prediction[0]])
+    def get_symptoms_step_4(self):
+        second_prediction = self.sec_predict(self.symptoms_exp)
+        # print(second_prediction)
+        self.calc_condition(self.symptoms_exp, self.num_days)
+        messages = []
+        if self.present_disease[0] == second_prediction[0]:
+            messages.append(f'You may have {self.present_disease[0]}')
+            messages.append(description_list[self.present_disease[0]])
+        else:
+            messages.append(f'You may have {self.present_disease[0]} or {second_prediction[0]}')
+            messages.append(description_list[self.present_disease[0]])
+            messages.append(description_list[second_prediction[0]])
 
-                # print(description_list[present_disease[0]])
-                precution_list = precautionDictionary[present_disease[0]]
-                print("Take following measures : ")
-                for i, j in enumerate(precution_list):
-                    print(i + 1, ")", j)
-
-                # confidence_level = (1.0*len(symptoms_present))/len(symptoms_given)
-                # print("confidence level is " + str(confidence_level))
-
-        recurse(0, 1)
-
-    def print_result(self):
-
-        self.tree_to_code(clf, cols)
+        precution_list = precautionDictionary[self.present_disease[0]]
+        messages.append('Take following measures :')
+        for i, j in enumerate(precution_list):
+            messages.append(f'({i + 1}), {j}')
+        ChatBot.state = 'start'
+        return {
+            'messages': messages
+        }
 
     def get_response(self, message):
-        if self.state == 'start':
+        if ChatBot.state == 'start':
             return self.get_info(message)
-        # Each step you need to change the state to know which response to get
-        return ''
+        elif ChatBot.state == 'symptoms_step_1':
+            return self.get_symptoms_step_1(message)
+        elif ChatBot.state == 'symptoms_step_2':
+            return self.get_symptoms_step_2(message)
+        elif ChatBot.state == 'symptoms_step_3':
+            return self.get_symptoms_step_3(message)
+        return {'message': []}
