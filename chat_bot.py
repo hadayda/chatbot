@@ -77,6 +77,7 @@ class ChatBot:
     @staticmethod
     def begin():
         ChatBot.state = 'start'
+        ChatBot.symptoms_given_index = 0
     def readn(self, nstr):
         engine = pyttsx3.init()
 
@@ -232,7 +233,7 @@ class ChatBot:
     def get_next_symptom(self, response):
         response = response.lower()
         if response != 'yes' and response != 'no':
-            return {'response': 'Provide proper answers i.e. (yes/no)'}
+            return {'messages': ['Provide proper answers i.e. (yes/no)']}
         if response == 'yes':
             ChatBot.symptoms_exp.append(ChatBot.symptoms_given[ChatBot.symptoms_given_index])
         ChatBot.symptoms_given_index += 1
@@ -257,7 +258,8 @@ class ChatBot:
             messages.append(f'({i + 1}), {j}')
         ChatBot.state = 'start'
         return {
-            'messages': messages
+            'messages': messages,
+            'final': True
         }
 
     def get_response(self, message):
