@@ -65,6 +65,8 @@ class ChatBot:
     node = 0
     depth = 1
     present_disease = None
+    symptom_check = False
+    symptom_step_1_visited = False
 
     def __init__(self):
         super().__init__()
@@ -128,10 +130,6 @@ class ChatBot:
                 _prec = {row[0]: [row[1], row[2], row[3], row[4]]}
                 precautionDictionary.update(_prec)
 
-    def get_info(self, message):
-        ChatBot.state = 'symptoms_step_1'
-        return {'messages': [f'Hello {message}', 'Enter the symptom you are experiencing']}
-
     def check_pattern(self, dis_list, inp):
         inp = inp.replace(' ', '_')
         patt = f'{inp}'
@@ -163,6 +161,15 @@ class ChatBot:
         disease = le.inverse_transform(val[0])
         return list(map(lambda x: x.strip(), list(disease)))
 
+    def get_info(self, message):
+        ChatBot.state = 'symptoms_step_1'
+        return {
+            'messages': [
+                f'Hello {message}',
+                'Enter the symptom you are experiencing',
+            ]
+        }
+
     def get_symptoms_step_1(self, disease):
         ChatBot.tree_ = clf.tree_
         ChatBot.feature_name = [
@@ -171,16 +178,20 @@ class ChatBot:
         ]
         chk_dis = ','.join(cols).split(',')
         conf, cnf_dis = self.check_pattern(chk_dis, disease)
-        if conf == 1:
-            message = ['searches related to input:']
-            for num, it in enumerate(cnf_dis):
-                if num != 0:
-                    return {'messages': [f'Select the one you meant (0 - {num}):']}
-                message.append(f'{num}, {it}')
-            ChatBot.disease_input = cnf_dis[0]
-            ChatBot.state = 'symptoms_step_2'
-            message.append('Okay. For how many days?:')
-            return {'messages': message}
+        messages = []
+        if conf:
+            if not ChatBot.symptom_step_1_visited:
+                messages.append('searches related to input:')
+            if len(cnf_dis) == 1:
+                ChatBot.disease_input = cnf_dis[0]
+                messages.append(f'{cnf_dis[0]}')
+                messages.append('Okay. For how many days?:')
+                ChatBot.state = 'symptoms_step_2'
+            elif not ChatBot.symptom_check:
+                messages.append('Select the one of the following:')
+                messages.append(', '.join(cnf_dis))
+            ChatBot.symptom_step_1_visited = True
+            return {'messages': messages}
         else:
             return {'messages': ['Enter valid symptom.']}
 
@@ -188,7 +199,8 @@ class ChatBot:
         try:
             ChatBot.num_days = int(days)
             return self.recurse()
-        except:
+        except Exception as e:
+            print(e)
             return {'messages': ['Enter a valid number of days.']}
 
     def recurse(self):
