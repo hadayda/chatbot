@@ -66,7 +66,6 @@ class ChatBot:
     depth = 1
     present_disease = None
     symptom_check = False
-    symptom_step_1_visited = False
 
     def __init__(self):
         super().__init__()
@@ -79,7 +78,19 @@ class ChatBot:
     @staticmethod
     def begin():
         ChatBot.state = 'start'
+        ChatBot.symptoms_given = []
         ChatBot.symptoms_given_index = 0
+        ChatBot.symptoms_present = []
+        ChatBot._tree = None
+        ChatBot.num_days = 0
+        ChatBot.symptoms_exp = []
+        ChatBot.feature_name = None
+        ChatBot.disease_input = None
+        ChatBot.node = 0
+        ChatBot.depth = 1
+        ChatBot.present_disease = None
+        ChatBot.symptom_check = False
+    
     def readn(self, nstr):
         engine = pyttsx3.init()
 
@@ -180,8 +191,6 @@ class ChatBot:
         conf, cnf_dis = self.check_pattern(chk_dis, disease)
         messages = []
         if conf:
-            if not ChatBot.symptom_step_1_visited:
-                messages.append('searches related to input:')
             if len(cnf_dis) == 1:
                 ChatBot.disease_input = cnf_dis[0]
                 messages.append(f'{cnf_dis[0]}')
@@ -190,7 +199,6 @@ class ChatBot:
             elif not ChatBot.symptom_check:
                 messages.append('Select the one of the following:')
                 messages.append(', '.join(cnf_dis))
-            ChatBot.symptom_step_1_visited = True
             return {'messages': messages}
         else:
             return {'messages': ['Enter valid symptom.']}
@@ -203,17 +211,16 @@ class ChatBot:
             return {'messages': ['Enter a valid number of days.']}
 
     def recurse(self):
-        indent = '  ' * self.depth
-        if ChatBot.tree_.feature[self.node] != _tree.TREE_UNDEFINED:
-            name = ChatBot.feature_name[self.node]
-            threshold = ChatBot.tree_.threshold[self.node]
+        if ChatBot.tree_.feature[ChatBot.node] != _tree.TREE_UNDEFINED:
+            name = ChatBot.feature_name[ChatBot.node]
+            threshold = ChatBot.tree_.threshold[ChatBot.node]
 
             if name == ChatBot.disease_input:
                 val = 1
             else:
                 val = 0
             if val <= threshold:
-                ChatBot.node = ChatBot.tree_.children_left[self.node]
+                ChatBot.node = ChatBot.tree_.children_left[ChatBot.node]
                 ChatBot.depth += 1
                 return self.recurse()
             else:
@@ -268,6 +275,7 @@ class ChatBot:
         for i, j in enumerate(precution_list):
             messages.append(f'({i + 1}), {j}')
         ChatBot.state = 'start'
+        ChatBot.begin()
         return {
             'messages': messages,
             'final': True
