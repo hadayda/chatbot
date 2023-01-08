@@ -199,8 +199,7 @@ class ChatBot:
         try:
             ChatBot.num_days = int(days)
             return self.recurse()
-        except Exception as e:
-            print(e)
+        except Exception:
             return {'messages': ['Enter a valid number of days.']}
 
     def recurse(self):
