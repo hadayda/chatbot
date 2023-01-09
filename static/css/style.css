@@ -1,0 +1,130 @@
+.w-150px{
+    width: 150px !important;
+}
+p{
+    color: #444444;
+}
+.carousel-caption{
+    text-align: center;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-top: 4px solid #3fbbc0;
+    margin-bottom: 7% !important;
+    margin: -70px;
+}
+.btnn:hover{
+    background-color: white;
+    color: #17a2b8 !important;
+    text-decoration: none;
+}
+.iconn{
+    width: 59px !important;
+    height: 56px !important;
+}
+.over{
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #3fbbc0 !important;
+    opacity: 0;
+    z-index: -1;
+    transition: all 0.5s;
+}
+.boxes{
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    opacity: 1;
+    transition: all 0.5s;
+}
+.boxes:hover .over{
+    top: 0;
+    opacity: 1;
+}
+.boxes:hover{
+    color: white !important;
+}
+.boxes:hover i{
+    color:white !important;
+}
+.boxes:hover p{
+    color:white !important;
+}
+.third a {
+   padding: 10px 40px !important;
+   border: white solid 3px !important;
+}
+ul{
+    list-style: none;
+}
+span{
+    content: '';
+    position: absolute;
+    width: 50px;
+    height: 3px;
+    background: #3fbbc0;
+    top:50px;
+    left: calc(50% - 25px);
+}
+
+.font-20{
+    font-size:20px;
+}
+
+.footer{
+    height: 165px;
+    width: 100%;
+    background-color: #17a2b8;
+    text-align: center;
+    padding: 5px;
+    box-sizing: border-box;
+    position: absolute;
+    left: 0;
+}
+
+.footer ul{
+    display: flex;
+   justify-content: center;
+   align-items: center;
+   margin-top:60px;
+}
+.footer a{
+    color: #fff;
+    margin-bottom: 15px;
+}
+.footer li{
+    margin: 10px;
+}
+.icon-footer a :hover{
+    color: #343a40;
+
+}
+.footer p{
+    margin-top: -20px;
+    color: #fff;
+  
+}
+.footer .alt{
+    color: #343a40;
+    text-decoration: none;
+}
+.footer .alt :hover{
+    text-decoration: underline;
+}
+
+.div8{
+    position: fixed;
+    top: 85%;
+    right: 0;
+    z-index: 999;
+}
+.div8 a{
+display: block;
+width:200%;
+height:400%;
+padding:2px;
+margin-top:20px ;
+color: #3fbbc0; 
+}
