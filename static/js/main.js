@@ -11,21 +11,16 @@ $(document).ready(function () {
             data: form.serialize(),
             success: function (response) {
                 if (response.final || false) {
-                    $('.result-container').html("");
+                    $('.result-container').html('');
                     response.messages.forEach(function (message) {
                         $('.result-container').append(`<li class="text-start mb-3"><p class="">${message}</p></li>`)
                     });
-                    messagesContainer.html("");
-                    messagesContainer.append(
-                        `<li class="text-start mb-3"><span class="bg-warning p-4 rounded-3 d-inline-block">What's Your Name?</span></li>`
-                    );
-
+                    messagesContainer.html(`<li class="text-start mb-3"><span class="bg-warning p-4 rounded-3 d-inline-block">What's Your Name?</span></li>`);
                 } else {
                     response.messages.forEach(function (message) {
                         messagesContainer.append(
                             `<li class="text-start mb-3"><span class="bg-warning p-4 rounded-3 d-inline-block">${message}</span></li>`
                         );
-
                     });
                     
                 }

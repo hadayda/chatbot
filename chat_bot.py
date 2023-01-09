@@ -66,6 +66,9 @@ class ChatBot:
     depth = 1
     present_disease = None
     symptom_check = False
+    cnf_dis = []
+    conf = 0
+    symptoms_step_1_visited = False
 
     def __init__(self):
         super().__init__()
@@ -90,7 +93,10 @@ class ChatBot:
         ChatBot.depth = 1
         ChatBot.present_disease = None
         ChatBot.symptom_check = False
-    
+        ChatBot.cnf_dis = []
+        ChatBot.conf = 0
+        ChatBot.symptoms_step_1_visited = False
+
     def readn(self, nstr):
         engine = pyttsx3.init()
 
@@ -182,23 +188,34 @@ class ChatBot:
         }
 
     def get_symptoms_step_1(self, disease):
-        ChatBot.tree_ = clf.tree_
-        ChatBot.feature_name = [
-            cols[i] if i != _tree.TREE_UNDEFINED else 'undefined!'
-            for i in ChatBot.tree_.feature
-        ]
-        chk_dis = ','.join(cols).split(',')
-        conf, cnf_dis = self.check_pattern(chk_dis, disease)
         messages = []
-        if conf:
-            if len(cnf_dis) == 1:
-                ChatBot.disease_input = cnf_dis[0]
-                messages.append(f'{cnf_dis[0]}')
+        if not ChatBot.symptoms_step_1_visited:
+            ChatBot.tree_ = clf.tree_
+            ChatBot.feature_name = [
+                cols[i] if i != _tree.TREE_UNDEFINED else 'undefined!'
+                for i in ChatBot.tree_.feature
+            ]
+            chk_dis = ','.join(cols).split(',')
+            ChatBot.conf, ChatBot.cnf_dis = self.check_pattern(chk_dis, disease)
+            ChatBot.symptoms_step_1_visited = True
+        if ChatBot.conf:
+            if ChatBot.symptom_check:
+                try:
+                    ChatBot.disease_input = ChatBot.cnf_dis[int(disease)]
+                    messages.append('Okay. For how many days?:')
+                    ChatBot.state = 'symptoms_step_2'
+                except (IndexError, ValueError):
+                    messages.append('Enter a valid number from the list above')
+            elif len(ChatBot.cnf_dis) == 1:
+                ChatBot.disease_input = ChatBot.cnf_dis[0]
+                messages.append(f'{ChatBot.disease_input}')
                 messages.append('Okay. For how many days?:')
                 ChatBot.state = 'symptoms_step_2'
             elif not ChatBot.symptom_check:
                 messages.append('Select the one of the following:')
-                messages.append(', '.join(cnf_dis))
+                for index, dis in enumerate(ChatBot.cnf_dis):
+                    messages.append(f'({index}) {dis}')
+                ChatBot.symptom_check = True
             return {'messages': messages}
         else:
             return {'messages': ['Enter valid symptom.']}
@@ -207,7 +224,7 @@ class ChatBot:
         try:
             ChatBot.num_days = int(days)
             return self.recurse()
-        except Exception:
+        except ValueError:
             return {'messages': ['Enter a valid number of days.']}
 
     def recurse(self):
@@ -225,6 +242,8 @@ class ChatBot:
                 return self.recurse()
             else:
                 ChatBot.symptoms_present.append(name)
+                ChatBot.node = ChatBot.tree_.children_right[ChatBot.node]
+                ChatBot.depth += 1
                 return self.recurse()
         else:
             ChatBot.state = 'symptoms_step_3'
@@ -239,7 +258,7 @@ class ChatBot:
             return {
                 'messages': [
                     'Are you experiencing any of the following symptoms?',
-                    ChatBot.symptoms_given[ChatBot.symptoms_given_index]
+                    f'{ChatBot.symptoms_given[ChatBot.symptoms_given_index]}?'
                 ]
             }
         elif ChatBot.symptoms_given_index == len(ChatBot.symptoms_given) - 1:
@@ -255,7 +274,7 @@ class ChatBot:
         if response == 'yes':
             ChatBot.symptoms_exp.append(ChatBot.symptoms_given[ChatBot.symptoms_given_index])
         ChatBot.symptoms_given_index += 1
-        return {'messages': [ChatBot.symptoms_given[ChatBot.symptoms_given_index]]}
+        return {'messages': [f'{ChatBot.symptoms_given[ChatBot.symptoms_given_index]}?']}
 
     def get_symptoms_step_4(self):
         second_prediction = self.sec_predict(self.symptoms_exp)
