@@ -3,7 +3,7 @@ $(document).ready(function () {
         e.preventDefault();
         let messagesContainer = $('.messages-container');
         messagesContainer.append(
-            `<li class="text-end mb-3 bg-primary text-white p-4 rounded-3 d-inline-block">${$('input[name="message"]').val()}</li>`
+            `<li class="text-end mb-3"><p class="d-inline-block text-white bg-primary p-4 rounded-3">${$('input[name="message"]').val()}</p></li>`
         );
         let form = $(this)
         $.ajax({
@@ -15,11 +15,11 @@ $(document).ready(function () {
                     response.messages.forEach(function (message) {
                         $('.result-container').append(`<li class="text-start mb-3">${message}</li>`)
                     });
-                    messagesContainer.html(`<li class="text-start mb-3 bg-warning p-4 rounded-3 d-inline-block">What's Your Name?</li>`);
+                    messagesContainer.html(`<li class="text-start mb-3"><p class="d-inline-block bg-warning p-4 rounded-3">What's Your Name?</p></li>`);
                 } else {
                     response.messages.forEach(function (message) {
                         messagesContainer.append(
-                            `<li class="text-start mb-3 bg-warning p-4 rounded-3 d-inline-block">${message}</li>`
+                            `<li class="text-start mb-3"><p class="d-inline-block bg-warning p-4 rounded-3">${message}</p></li>`
                         );
                     });
                     
